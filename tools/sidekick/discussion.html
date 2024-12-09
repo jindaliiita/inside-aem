@@ -100,7 +100,7 @@
             panel.appendChild(commentList);
             discussion.comments.nodes.forEach((comment, index) => {
                 const commentElement = document.createElement('li');
-                commentElement.classList.add(`comment`${index});
+                commentElement.classList.add(`comment${index}`);
                 commentElement.textContent = comment.body;
                 commentList.appendChild(commentElement);
             });
@@ -147,7 +147,7 @@
 
     document.addEventListener('DOMContentLoaded', async function() {
         try {
-            await addcomment('https://www.example.com', 'body > main > div:nth-child(5) > div', 'This is a new comment');
+            //await addcomment('https://www.example.com', 'body > main > div:nth-child(5) > div', 'This is a new comment');
             //await createDiscussionWithComment('https://www.example.com', 'body > main > div.section.article-header-container', 'This is another comment');
         } catch (error) {
             console.error('Error:', error.message);
