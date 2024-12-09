@@ -98,12 +98,26 @@
             const commentList = document.createElement('ul');
             commentList.className = 'comment-list';
             panel.appendChild(commentList);
-            discussion.comments.nodes.forEach((comment, index) => {
+
+            if(discussion.comments.nodes.length > 0) {
+                const commentElement = document.createElement('li');
+                commentElement.classList.add(`comment-0`);
+                commentElement.textContent = discussion.comments.nodes[0].body;
+                commentList.appendChild(commentElement);
+
+                discussion.comments.nodes[0].replies.nodes.forEach((reply, index) => {
+                    const commentElement = document.createElement('li');
+                    commentElement.classList.add(`comment-${index+1}`);
+                    commentElement.textContent = reply.body;
+                    commentList.appendChild(commentElement);
+                });
+            }
+/*            discussion.comments.nodes.forEach((comment, index) => {
                 const commentElement = document.createElement('li');
                 commentElement.classList.add(`comment${index}`);
                 commentElement.textContent = comment.body;
                 commentList.appendChild(commentElement);
-            });
+            });*/
 
             container.appendChild(button);
             container.appendChild(panel);
