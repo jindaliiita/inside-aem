@@ -1,7 +1,7 @@
 import { REPO_OWNER, REPO_NAME, sendGraphQLRequest } from '/tools/sidekick/graphql.js';
 
 // 1. Create a new discussion
-export async function createDiscussion(title, body) {
+async function createNewDiscussion(title, body) {
     const createDiscussionQuery = `
     mutation ($repositoryId: ID!, $title: String!, $body: String!, $categoryId: ID!) {
       createDiscussion(input: {repositoryId: $repositoryId, title: $title, body: $body, categoryId: $categoryId}) {
@@ -75,11 +75,12 @@ export async function addComment(discussionId, body) {
 }
 
 // Main execution
-(async (pageUrl, selector, comment) => {
+export async function createDiscussion (pageUrl, selector, comment)  {
     try {
-        const discussionId = await createDiscussion(pageUrl, selector);
+        const discussionId = await createNewDiscussion(pageUrl, selector);
         await addComment(discussionId, comment);
+        return discussionId;
     } catch (error) {
         console.error('Error:', error.message);
     }
-})();
+}
