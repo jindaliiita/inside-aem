@@ -84,35 +84,10 @@
 <body>
 
 <script type="module">
-    import { createDiscussion, addComment } from '/tools/sidekick/create.js';
-
-    function createDiscussionWithComment(pageUrl, selector, firstComment) {
-        return new Promise((resolve, reject) => {
-            createDiscussion(pageUrl, selector)
-                .then(discussionId => {
-                    addComment(discussionId, firstComment)
-                        .then(() => resolve())
-                        .catch(error => reject(error));
-                })
-                .catch(error => reject(error));
-        });
-    }
-
-    document.addEventListener('DOMContentLoaded', async function() {
-        try {
-            //await createDiscussionWithComment('https://www.example.com', 'body > main > div:nth-child(5) > div', 'This is a comment');
-            //await createDiscussionWithComment('https://www.example.com', 'body > main > div.section.article-header-container', 'This is another comment');
-        } catch (error) {
-            console.error('Error:', error.message);
-        }
-    });
-
-</script>
-
-<script type="module">
     import { fetchDiscussions } from './tools/sidekick/fetch.js';
     import { addCommentById } from './tools/sidekick/addcommentbyid.js';
     import { resolveDiscussion } from './tools/sidekick/close.js';
+    import { createDiscussion } from './tools/sidekick/create.js';
 
     document.addEventListener('DOMContentLoaded', async function() {
         let dicussions;
@@ -182,15 +157,117 @@
                 targetElement.appendChild(comment_component);
 
                 togglePanel(this);
-                /*var panel = this.nextElementSibling;
-                if (panel.style.display === 'block') {
-                    panel.style.display = 'none';
-                } else {
-                    panel.style.display = 'block';
-                    panel.scrollIntoView({ behavior: 'smooth' });
-                }*/
             });
         }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const addCommentIcon = (element) => {
+            // Create the + icon if it does not exist
+            if (!element.querySelector('.comment-icon')) {
+                const icon = document.createElement('div');
+                icon.textContent = '+';
+                icon.className = 'comment-icon';
+                icon.style.position = 'absolute';
+                icon.style.top = '10px';
+                icon.style.right = '10px';
+                icon.style.background = '#007bff';
+                icon.style.color = '#fff';
+                icon.style.padding = '5px';
+                icon.style.borderRadius = '50%';
+                icon.style.cursor = 'pointer';
+                icon.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.2)';
+
+                icon.addEventListener('click', () => {
+                    openCommentBox(element);
+                });
+
+                element.appendChild(icon);
+            }
+        };
+
+        // Function to remove the + icon when not hovering
+        const removeCommentIcon = (element) => {
+            const icon = element.querySelector('.comment-icon');
+            if (icon) {
+                element.removeChild(icon);
+            }
+        };
+
+        // Function to open a comment box
+        const openCommentBox = (element) => {
+            // Create the comment box if it does not exist
+            if (!element.querySelector('.comment-box')) {
+                const commentBox = document.createElement('div');
+                commentBox.className = 'comment-box';
+                commentBox.style.position = 'absolute';
+                commentBox.style.top = '40px';
+                commentBox.style.right = '10px';
+                commentBox.style.background = '#f9f9f9';
+                commentBox.style.border = '1px solid #ccc';
+                commentBox.style.padding = '10px';
+                commentBox.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.2)';
+
+                const textarea = document.createElement('textarea');
+                textarea.placeholder = 'Add your comment...';
+                textarea.style.width = '200px';
+                textarea.style.height = '80px';
+                textarea.style.marginBottom = '5px';
+
+                const submitButton = document.createElement('button');
+                submitButton.textContent = 'Post Comment';
+                submitButton.style.background = '#007bff';
+                submitButton.style.color = '#fff';
+                submitButton.style.border = 'none';
+                submitButton.style.padding = '5px 10px';
+                submitButton.style.cursor = 'pointer';
+                submitButton.style.borderRadius = '3px';
+
+                submitButton.addEventListener('click', async () => {
+                    let selector = buildSelector(element);
+                    let commentText = textarea.value;
+                    //let discussionId = await createDiscussion('/blog1', selector, textarea.value);
+                    //element.removeChild(commentBox);
+                    // TODO - Re-render discussions panel
+                    //createDiscussionInPanel(discussionId, selector, commentText);
+
+                    createDiscussion('/blog1', selector, textarea.value)
+                        .then(discussionId => {
+                            element.removeChild(commentBox);
+                            createDiscussionInPanel(discussionId, selector, commentText);
+                        })
+                });
+
+                commentBox.appendChild(textarea);
+                commentBox.appendChild(submitButton);
+                element.appendChild(commentBox);
+            } else {
+                //
+            }
+        };
+
+        // Add event listeners to all blocks and sections
+        const elements = parent.document.querySelectorAll('.block, .section');
+        elements.forEach(element => {
+            element.style.position = 'relative';
+            element.style.transition = 'background 0.3s';
+
+            element.addEventListener('mouseenter', () => {
+                element.style.background = '#f0f8ff'; // Highlight the element
+                // if a discussion exists with text in accordion as this buildSelector
+                const selector = buildSelector(element);
+                const accordionBtns = document.querySelectorAll('.accordion');
+                const exists = Array.from(accordionBtns).some(btn => btn.textContent === selector);
+                if (!exists) {
+                    addCommentIcon(element);
+                }
+            });
+
+            element.addEventListener('mouseleave', () => {
+                element.style.background = ''; // Remove highlight
+                removeCommentIcon(element);
+            });
+        });
     });
 
     function togglePanel(elem) {
@@ -203,7 +280,7 @@
         }
     }
 
-    function addNewComment(id, comment) {
+    function appendNewCommentToPage(id, comment) {
         const commentInput = parent.document.querySelector(`div#${id} #comment-input`);
         const commentsSection = parent.document.querySelector(`div#${id} #comments-section`);
 
@@ -264,7 +341,7 @@
             if (comment) {
                 addCommentById(id, comment)
                     .then(() => {
-                        addNewComment(id, comment);
+                        appendNewCommentToPage(id, comment);
                     })
                     .catch(error => console.error('Error adding comment:', error));
             }
@@ -306,8 +383,10 @@
         closeButton.style.top = '0';
         closeButton.style.right = '0';
         closeButton.addEventListener('click', () => {
-            targetElement.classList.remove('active');
             commentElement.style.display = 'none';
+            const accordionTarget = document.querySelector(`.accordion#${id}`);
+            togglePanel(accordionTarget);
+            accordionTarget.classList.remove('active');
         });
         commentElement.appendChild(closeButton);
 
@@ -325,25 +404,8 @@
         }
         return null;
     }
-</script>
 
-<script type="module">
-
-    document.addEventListener('DOMContentLoaded', async function () {
-        try {
-            //await addcomment('https://www.example.com', 'body > main > div:nth-child(5) > div', 'This is a new comment');
-            //await createDiscussionWithComment('https://www.example.com', 'body > main > div.section.article-header-container', 'This is another comment');
-        } catch (error) {
-            console.error('Error:', error.message);
-        }
-    });
-
-</script>
-
-<script type="module">
-    import { createDiscussion } from './tools/sidekick/create.js';
-
-    function getSelector(element) {
+    function buildSelector(element) {
         if (!element) return '';
         const parts = [];
         while (element.parentElement) {
@@ -415,109 +477,6 @@
             }*/
         });
     }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        // Function to create the + icon and add it to a hovered element
-        const addCommentIcon = (element) => {
-            // Create the + icon if it does not exist
-            if (!element.querySelector('.comment-icon')) {
-                const icon = document.createElement('div');
-                icon.textContent = '+';
-                icon.className = 'comment-icon';
-                icon.style.position = 'absolute';
-                icon.style.top = '10px';
-                icon.style.right = '10px';
-                icon.style.background = '#007bff';
-                icon.style.color = '#fff';
-                icon.style.padding = '5px';
-                icon.style.borderRadius = '50%';
-                icon.style.cursor = 'pointer';
-                icon.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.2)';
-
-                icon.addEventListener('click', () => {
-                    openCommentBox(element);
-                });
-
-                element.appendChild(icon);
-            }
-        };
-
-        // Function to remove the + icon when not hovering
-        const removeCommentIcon = (element) => {
-            const icon = element.querySelector('.comment-icon');
-            if (icon) {
-                element.removeChild(icon);
-            }
-        };
-
-        // Function to open a comment box
-        const openCommentBox = (element) => {
-            // Create the comment box if it does not exist
-            if (!element.querySelector('.comment-box')) {
-                const commentBox = document.createElement('div');
-                commentBox.className = 'comment-box';
-                commentBox.style.position = 'absolute';
-                commentBox.style.top = '40px';
-                commentBox.style.right = '10px';
-                commentBox.style.background = '#f9f9f9';
-                commentBox.style.border = '1px solid #ccc';
-                commentBox.style.padding = '10px';
-                commentBox.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.2)';
-
-                const textarea = document.createElement('textarea');
-                textarea.placeholder = 'Add your comment...';
-                textarea.style.width = '200px';
-                textarea.style.height = '80px';
-                textarea.style.marginBottom = '5px';
-
-                const submitButton = document.createElement('button');
-                submitButton.textContent = 'Post Comment';
-                submitButton.style.background = '#007bff';
-                submitButton.style.color = '#fff';
-                submitButton.style.border = 'none';
-                submitButton.style.padding = '5px 10px';
-                submitButton.style.cursor = 'pointer';
-                submitButton.style.borderRadius = '3px';
-
-                submitButton.addEventListener('click', async () => {
-                    let selector = getSelector(element);
-                    let commentText = textarea.value;
-                    //let discussionId = await createDiscussion('/blog1', selector, textarea.value);
-                    //element.removeChild(commentBox);
-                    // TODO - Re-render discussions panel
-                    //createDiscussionInPanel(discussionId, selector, commentText);
-
-                    createDiscussion('/blog1', selector, textarea.value)
-                        .then(discussionId => {
-                            element.removeChild(commentBox);
-                            createDiscussionInPanel(discussionId, selector, commentText);
-                        })
-                });
-
-                commentBox.appendChild(textarea);
-                commentBox.appendChild(submitButton);
-                element.appendChild(commentBox);
-            }
-        };
-
-        // Add event listeners to all blocks and sections
-        const elements = parent.document.querySelectorAll('.block, .section');
-        elements.forEach(element => {
-            element.style.position = 'relative';
-            element.style.transition = 'background 0.3s';
-
-            element.addEventListener('mouseenter', () => {
-                element.style.background = '#f0f8ff'; // Highlight the element
-                addCommentIcon(element);
-            });
-
-            element.addEventListener('mouseleave', () => {
-                element.style.background = ''; // Remove highlight
-                removeCommentIcon(element);
-            });
-        });
-    });
-
 
 </script>
 
