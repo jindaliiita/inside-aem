@@ -9,7 +9,6 @@
     <meta name="Description" content="AEM Sidekick Library" />
     <meta name="robots" content="noindex" />
     <base href="/" />
-    <script src="./tools/sidekick/api.js"></script>
     <style>
         html,
         body {
@@ -89,10 +88,123 @@
     import { resolveDiscussion } from './tools/sidekick/close.js';
     import { createDiscussion } from './tools/sidekick/create.js';
 
+    function createNewCommentComponent(discussion_id, element, commentsAll) {
+        let commentBox;
+        if (!element.querySelector('.comment-box')) {
+            commentBox = document.createElement('div');
+            commentBox.className = 'comment-box';
+            commentBox.style.position = 'absolute';
+            commentBox.style.top = '40px';
+            commentBox.style.right = '10px';
+            commentBox.style.background = '#f9f9f9';
+            commentBox.style.border = '1px solid #ccc';
+            commentBox.style.padding = '10px';
+            commentBox.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.2)';
+            commentBox.setAttribute('data-discussion-id', discussion_id);
+
+            const textarea = document.createElement('textarea');
+            textarea.placeholder = 'Add your comment...';
+            textarea.style.width = '200px';
+            textarea.style.height = '80px';
+            textarea.style.marginBottom = '5px';
+
+            const commentsSection = document.createElement('div');
+            commentsSection.className = 'comments';
+            commentsSection.id = 'comments-section';
+            renderFetchedComments(commentsAll, commentsSection);
+
+            const submitButton = document.createElement('button');
+            submitButton.textContent = 'Post Comment';
+            submitButton.style.background = '#007bff';
+            submitButton.style.color = '#fff';
+            submitButton.style.border = 'none';
+            submitButton.style.padding = '5px 10px';
+            submitButton.style.cursor = 'pointer';
+            submitButton.style.borderRadius = '3px';
+
+            submitButton.addEventListener('click', async () => {
+                let commentText = textarea.textContent.trim() || textarea.value.trim();
+                if(commentText === "") {
+                    alert("Comment cannot be empty!");
+                    return;
+                }
+                if(getSignedInUserEmail() == null) {
+                    alert('Please sign in to post a comment');
+                    return;
+                }
+
+                commentText = getSignedInUserEmail() + ' - ' + commentText;
+
+                const newComment = document.createElement('div');
+                newComment.className = 'comment';
+                newComment.textContent = textarea.textContent.trim() || textarea.value.trim();
+                commentsSection.appendChild(newComment);
+
+                if (commentText) {
+                    addCommentById(discussion_id, commentText)
+                        .then(() => {
+                            handlePostDiscussion(discussion_id, element, textarea);
+                            //appendNewCommentToPage(id, comment);
+                        })
+                        .catch(error => console.error('Error adding comment:', error));
+                }
+                textarea.value = "";
+            });
+
+            const resolveButton = document.createElement('button');
+            resolveButton.textContent = 'Resolve discussion';
+            resolveButton.addEventListener('click', () => {
+                commentBox.style.display = 'none';
+                commentBox.remove();
+                const closingText = getSignedInUserEmail() + ' - closed this discussion';
+                addCommentById(discussion_id, closingText)
+                    .then(() => {
+                        resolveDiscussion(discussion_id);
+                    })
+                    .catch(error => console.error('Error closing discussion:', error));
+                document.querySelector(`.accordion#${discussion_id}`).remove();
+                document.querySelector(`.panel [data-discussion-id='${discussion_id}']`).parentElement.remove();
+            });
+
+            const closeButton = document.createElement('button');
+            closeButton.textContent = 'X';
+            closeButton.style.position = 'absolute';
+            closeButton.style.top = '0';
+            closeButton.style.right = '0';
+            closeButton.addEventListener('click', () => {
+                commentBox.style.display = 'none';
+                commentBox.remove();
+                const accordionTarget = document.querySelector(`.accordion#${discussion_id}`);
+                togglePanel(accordionTarget);
+                accordionTarget.classList.remove('active');
+            });
+
+            commentBox.appendChild(textarea);
+            commentBox.appendChild(commentsSection);
+            commentBox.appendChild(submitButton);
+            commentBox.appendChild(resolveButton);
+            commentBox.appendChild(closeButton);
+            element.appendChild(commentBox);
+        } else {
+            // only add a comment to existing
+            commentBox = element.querySelector('.comment-box');
+            const commentText = commentsAll && commentsAll[0] ? commentsAll[0].textContent.trim() || commentsAll[0].value.trim() : commentsAll[0];
+
+            // add to panel
+            const comments_list_ul = document.querySelector(`ul[data-discussion-id="${discussion_id}"]`);
+            const numOfComments = comments_list_ul.children.length;
+            const commentElement = document.createElement('li');
+            commentElement.classList.add(`comment-${numOfComments}`);
+            commentElement.textContent = commentText;
+            comments_list_ul.appendChild(commentElement);
+        }
+        return commentBox;
+    }
+
     document.addEventListener('DOMContentLoaded', async function() {
         let dicussions;
         try {
-            let data = await fetchDiscussions('Discussion Name', 'Discussion Description', 'user@example.com');
+            let data = await fetchDiscussions();
             dicussions = data.repository.discussions.nodes;
             console.log('Fetched discussions:', dicussions);
         } catch (error) {
@@ -152,9 +264,10 @@
                 const comments_list = document.querySelectorAll(`ul[data-discussion-id="${discussion_id}"] li`);
                 //comments_list.forEach(c => console.log(c.textContent));
 
-                const comment_component = createCommentComponent(discussion_id, targetElement, comments_list);
+                //const comment_component = createCommentComponent(discussion_id, targetElement, comments_list);
+                const comment_component = createNewCommentComponent(discussion_id, targetElement, comments_list);
                 comment_component.style.display = 'block';
-                targetElement.appendChild(comment_component);
+                //targetElement.appendChild(comment_component);
 
                 togglePanel(this);
             });
@@ -195,7 +308,7 @@
         };
 
         // Function to open a comment box
-        const openCommentBox = (element) => {
+        const openCommentBox = async (element) => {
             // Create the comment box if it does not exist
             if (!element.querySelector('.comment-box')) {
                 const commentBox = document.createElement('div');
@@ -214,6 +327,10 @@
                 textarea.style.height = '80px';
                 textarea.style.marginBottom = '5px';
 
+                const commentsSection = document.createElement('div');
+                commentsSection.className = 'comments';
+                commentsSection.id = 'comments-section';
+
                 const submitButton = document.createElement('button');
                 submitButton.textContent = 'Post Comment';
                 submitButton.style.background = '#007bff';
@@ -224,22 +341,62 @@
                 submitButton.style.borderRadius = '3px';
 
                 submitButton.addEventListener('click', async () => {
-                    let selector = buildSelector(element);
-                    let commentText = textarea.value;
-                    //let discussionId = await createDiscussion('/blog1', selector, textarea.value);
-                    //element.removeChild(commentBox);
-                    // TODO - Re-render discussions panel
-                    //createDiscussionInPanel(discussionId, selector, commentText);
 
-                    createDiscussion('/blog1', selector, textarea.value)
-                        .then(discussionId => {
-                            element.removeChild(commentBox);
-                            createDiscussionInPanel(discussionId, selector, commentText);
+                    if(getSignedInUserEmail() == null) {
+                        alert('Please sign in to post a comment');
+                        return;
+                    }
+                    const newComment = document.createElement('div');
+                    newComment.className = 'comment';
+                    newComment.textContent = textarea.value.trim();
+                    commentsSection.appendChild(newComment);
+
+                    handlePostDiscussion(null, element, textarea).then((discussionId) => {
+                        commentBox.setAttribute('data-discussion-id', discussionId);
+                    });
+                    textarea.value = "";
+                    resolveButton.style.display = 'block';
+
+                });
+
+                const resolveButton = document.createElement('button');
+                resolveButton.textContent = 'Resolve discussion';
+                resolveButton.style.display = 'none';
+                resolveButton.addEventListener('click', () => {
+                    commentBox.style.display = 'none';
+                    commentBox.remove();
+                    const closingText = getSignedInUserEmail() + ' - closed this discussion';
+                    let discussion_id = commentBox.getAttribute('data-discussion-id');
+                    addCommentById(discussion_id, closingText)
+                        .then(() => {
+                            resolveDiscussion(discussion_id);
                         })
+                        .catch(error => console.error('Error closing discussion:', error));
+                    document.querySelector(`.accordion#${discussion_id}`).remove();
+                    document.querySelector(`.panel [data-discussion-id='${discussion_id}']`).parentElement.remove();
+                });
+
+                const closeButton = document.createElement('button');
+                closeButton.textContent = 'X';
+                closeButton.style.position = 'absolute';
+                closeButton.style.top = '0';
+                closeButton.style.right = '0';
+                closeButton.addEventListener('click', () => {
+                    commentBox.style.display = 'none';
+                    commentBox.remove();
+                    if(commentBox.getAttribute('data-discussion-id')) {
+                        const discussion_id = commentBox.getAttribute('data-discussion-id');
+                        const accordionTarget = document.querySelector(`.accordion#${discussion_id}`);
+                        togglePanel(accordionTarget);
+                        accordionTarget.classList.remove('active');
+                    }
                 });
 
                 commentBox.appendChild(textarea);
+                commentBox.appendChild(commentsSection);
                 commentBox.appendChild(submitButton);
+                commentBox.appendChild(resolveButton);
+                commentBox.appendChild(closeButton);
                 element.appendChild(commentBox);
             } else {
                 //
@@ -280,30 +437,6 @@
         }
     }
 
-    function appendNewCommentToPage(id, comment) {
-        const commentInput = parent.document.querySelector(`div#${id} #comment-input`);
-        const commentsSection = parent.document.querySelector(`div#${id} #comments-section`);
-
-        if (comment !== "") {
-            const newComment = document.createElement('div');
-            newComment.className = 'comment';
-            newComment.textContent = comment;
-            commentsSection.appendChild(newComment);
-            commentInput.value = "";
-
-            // Add to panel
-            const commentPanelList = document.querySelector(`ul[data-discussion-id='${id}']`);
-            const numOfComments = commentPanelList.children.length;
-            const commentElement = document.createElement('li');
-            commentElement.classList.add(`comment-${numOfComments}`);
-            commentElement.textContent = comment;
-            commentPanelList.appendChild(commentElement);
-
-        } else {
-            alert("Comment cannot be empty!");
-        }
-    }
-
     function renderFetchedComments(comments, commentsSectionElem) {
         comments.forEach(comment => {
             const newComment = document.createElement('div');
@@ -311,90 +444,6 @@
             newComment.textContent = comment.textContent.trim();
             commentsSectionElem.appendChild(newComment);
         });
-    }
-
-    function createCommentComponent(id, targetElement, comments) {
-        // Create comment component start
-        const commentElement = document.createElement('div');
-        commentElement.id = id;
-        commentElement.className = 'comment-component';
-
-        const heading = document.createElement('h3');
-        heading.textContent = 'Discussions';
-        commentElement.appendChild(heading)
-
-        const commentBox = document.createElement('div');
-        commentBox.className = 'comment-box';
-        const commentInput = document.createElement('textarea');
-        commentInput.id = 'comment-input';
-        commentInput.placeholder = 'Write your comment here...';
-        commentBox.appendChild(commentInput);
-        const postButton = document.createElement('button');
-        postButton.textContent = 'Post Comment';
-        postButton.addEventListener('click', () => {
-            let comment = commentInput.value.trim();
-            if(comment === "") {
-                alert("Comment cannot be empty!");
-                return;
-            }
-            comment = getSignedInUserEmail() + ' - ' + comment;
-            if (comment) {
-                addCommentById(id, comment)
-                    .then(() => {
-                        appendNewCommentToPage(id, comment);
-                    })
-                    .catch(error => console.error('Error adding comment:', error));
-            }
-        });
-
-        const resolveButton = document.createElement('button');
-        resolveButton.textContent = 'Resolve discussion';
-        resolveButton.addEventListener('click', () => {
-            commentElement.style.display = 'none';
-            const closingText = getSignedInUserEmail() + ' - closed this discussion';
-            addCommentById(id, closingText)
-            .then(() => {
-                resolveDiscussion(id);
-            })
-            .catch(error => console.error('Error closing discussion:', error));
-            document.querySelector(`.accordion#${id}`).remove();
-            document.querySelector(`.panel [data-discussion-id='${id}']`).parentElement.remove();
-        });
-
-        commentBox.appendChild(postButton);
-        commentBox.appendChild(resolveButton);
-        commentElement.appendChild(commentBox);
-
-        const commentsSection = document.createElement('div');
-        commentsSection.className = 'comments';
-        commentsSection.id = 'comments-section';
-        const label = document.createElement('h4');
-        label.textContent = 'Comments';
-        commentsSection.appendChild(label);
-        commentElement.appendChild(commentsSection);
-
-        // Populate comments
-        renderFetchedComments(comments, commentsSection);
-
-        // Create close button
-        const closeButton = document.createElement('button');
-        closeButton.textContent = 'X';
-        closeButton.style.position = 'absolute';
-        closeButton.style.top = '0';
-        closeButton.style.right = '0';
-        closeButton.addEventListener('click', () => {
-            commentElement.style.display = 'none';
-            const accordionTarget = document.querySelector(`.accordion#${id}`);
-            togglePanel(accordionTarget);
-            accordionTarget.classList.remove('active');
-        });
-        commentElement.appendChild(closeButton);
-
-        const blockCoordinates = targetElement.getBoundingClientRect();
-        commentElement.style.top = `${blockCoordinates.bottom + window.scrollY}px`;
-        commentElement.style.left = `${blockCoordinates.left + window.scrollX}px`;
-
-        return commentElement;
     }
 
     function getSignedInUserEmail() {
@@ -461,21 +510,139 @@
             this.classList.toggle('active');
             const discussion_id = this.id;
             const comments_list = document.querySelectorAll(`ul[data-discussion-id="${discussion_id}"] li`);
-            //comments_list.forEach(c => console.log(c.textContent));
 
-            const comment_component = createCommentComponent(discussion_id, targetElement, comments_list);
+            const comment_component = createNewCommentComponent(discussion_id, targetElement, comments_list);
             comment_component.style.display = 'block';
             targetElement.appendChild(comment_component);
 
             togglePanel(this);
-            /*var panel = this.nextElementSibling;
-            if (panel.style.display === 'block') {
-                panel.style.display = 'none';
-            } else {
-                panel.style.display = 'block';
-                panel.scrollIntoView({ behavior: 'smooth' });
-            }*/
         });
+    }
+
+    function handlePostDiscussion(discussion_id, element, comment) {
+
+        if(discussion_id === null) { // new discussion
+            const elSelector = buildSelector(element);
+            const firstCommentText = comment.textContent.trim() || comment.value.trim();
+            return createDiscussion('/blog', elSelector, firstCommentText)
+                .then(discussionId => {
+                    createDiscussionInPanel(discussionId, elSelector, firstCommentText);
+                    return discussionId;
+                });
+        } else {
+            createNewCommentComponent(discussion_id, element, [comment]);
+        }
+    }
+
+    // Remove
+    function appendNewCommentToPage(id, comment) {
+        const commentInput = parent.document.querySelector(`div#${id} #comment-input`);
+        const commentsSection = parent.document.querySelector(`div#${id} #comments-section`);
+
+        if (comment !== "") {
+            const newComment = document.createElement('div');
+            newComment.className = 'comment';
+            newComment.textContent = comment;
+            commentsSection.appendChild(newComment);
+            commentInput.value = "";
+
+            // Add to panel
+            const commentPanelList = document.querySelector(`ul[data-discussion-id='${id}']`);
+            const numOfComments = commentPanelList.children.length;
+            const commentElement = document.createElement('li');
+            commentElement.classList.add(`comment-${numOfComments}`);
+            commentElement.textContent = comment;
+            commentPanelList.appendChild(commentElement);
+
+        } else {
+            alert("Comment cannot be empty!");
+        }
+    }
+
+    // Remove
+    function createCommentComponent(id, targetElement, comments) {
+        // Create comment component start
+        const commentElement = document.createElement('div');
+        commentElement.id = id;
+        commentElement.className = 'comment-component';
+
+        const heading = document.createElement('h3');
+        heading.textContent = 'Discussions';
+        commentElement.appendChild(heading)
+
+        const commentBox = document.createElement('div');
+        commentBox.className = 'comment-box';
+        const commentInput = document.createElement('textarea');
+        commentInput.id = 'comment-input';
+        commentInput.placeholder = 'Write your comment here...';
+        commentBox.appendChild(commentInput);
+        const postButton = document.createElement('button');
+        postButton.textContent = 'Post Comment';
+        postButton.addEventListener('click', () => {
+            let comment = commentInput.value.trim();
+            if(comment === "") {
+                alert("Comment cannot be empty!");
+                return;
+            }
+            comment = getSignedInUserEmail() + ' - ' + comment;
+            if (comment) {
+                addCommentById(id, comment)
+                    .then(() => {
+                        appendNewCommentToPage(id, comment);
+                    })
+                    .catch(error => console.error('Error adding comment:', error));
+            }
+        });
+
+        const resolveButton = document.createElement('button');
+        resolveButton.textContent = 'Resolve discussion';
+        resolveButton.addEventListener('click', () => {
+            commentElement.style.display = 'none';
+
+            const closingText = getSignedInUserEmail() + ' - closed this discussion';
+            addCommentById(id, closingText)
+                .then(() => {
+                    resolveDiscussion(id);
+                })
+                .catch(error => console.error('Error closing discussion:', error));
+            document.querySelector(`.accordion#${id}`).remove();
+            document.querySelector(`.panel [data-discussion-id='${id}']`).parentElement.remove();
+        });
+
+        commentBox.appendChild(postButton);
+        commentBox.appendChild(resolveButton);
+        commentElement.appendChild(commentBox);
+
+        const commentsSection = document.createElement('div');
+        commentsSection.className = 'comments';
+        commentsSection.id = 'comments-section';
+        const label = document.createElement('h4');
+        label.textContent = 'Comments';
+        commentsSection.appendChild(label);
+        commentElement.appendChild(commentsSection);
+
+        // Populate comments
+        renderFetchedComments(comments, commentsSection);
+
+        // Create close button
+        const closeButton = document.createElement('button');
+        closeButton.textContent = 'X';
+        closeButton.style.position = 'absolute';
+        closeButton.style.top = '0';
+        closeButton.style.right = '0';
+        closeButton.addEventListener('click', () => {
+            commentElement.style.display = 'none';
+            const accordionTarget = document.querySelector(`.accordion#${id}`);
+            togglePanel(accordionTarget);
+            accordionTarget.classList.remove('active');
+        });
+        commentElement.appendChild(closeButton);
+
+        const blockCoordinates = targetElement.getBoundingClientRect();
+        commentElement.style.top = `${blockCoordinates.bottom + window.scrollY}px`;
+        commentElement.style.left = `${blockCoordinates.left + window.scrollX}px`;
+
+        return commentElement;
     }
 
 </script>
