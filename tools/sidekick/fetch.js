@@ -4,7 +4,7 @@ export const fetchDiscussions = async () => {
     const query = `
     query {
       repository(owner: "akasjain-helix", name: "hlxdiscussions") {
-        discussions(first: 10, states: OPEN) {
+        discussions(first: 100, states: OPEN) {
           nodes {
             id
             title

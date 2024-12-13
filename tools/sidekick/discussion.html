@@ -344,12 +344,23 @@
                     newComment.textContent = commentText;
                     commentsSection.appendChild(newComment);
 
-                    handlePostDiscussion(null, element, commentText).then((discussionId) => {
-                        commentBox.setAttribute('data-discussion-id', discussionId);
-                    });
+                    let discussion_id = commentBox.getAttribute('data-discussion-id') || null;
+
+                    if(discussion_id == null) {
+                        handlePostDiscussion(null, element, commentText).then((discussionId) => {
+                            if(discussionId) { // case of new discussion
+                                commentBox.setAttribute('data-discussion-id', discussionId);
+                            }
+                        });
+                    } else {
+                        addCommentById(discussion_id, commentText)
+                            .then(() => {
+                                handlePostDiscussion(discussion_id, element, commentText);
+                            })
+                            .catch(error => console.error('Error adding comment:', error));
+                    }
                     textarea.value = "";
                     resolveButton.style.display = 'block';
-
                 });
 
                 const resolveButton = document.createElement('button');

@@ -4,7 +4,7 @@ async function findDiscussionById(id) {
     const query = `
     query ($owner: String!, $name: String!) {
       repository(owner: $owner, name: $name) {
-        discussions(first: 10) {
+        discussions(first: 100, states: OPEN) {
           nodes {
             id
             title
