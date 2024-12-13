@@ -38,24 +38,6 @@
             background-color: #f1f1f1;
         }
 
-        .comment-component {
-          position: fixed;
-          zIndex:1000;
-          backgroundColor: white;
-          border: 1px solid #ccc;
-          boxShadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-          padding: 16px;
-          borderRadius: 8px;
-          width: 300px;
-          maxHeight: 80vh;
-          overflowY: auto;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          display: none;
-
-        }
-
         .comment-box {
           margin-top: 20px;
         }
@@ -137,13 +119,13 @@
 
                 const newComment = document.createElement('div');
                 newComment.className = 'comment';
-                newComment.textContent = textarea.textContent.trim() || textarea.value.trim();
+                newComment.textContent = commentText;
                 commentsSection.appendChild(newComment);
 
                 if (commentText) {
                     addCommentById(discussion_id, commentText)
                         .then(() => {
-                            handlePostDiscussion(discussion_id, element, textarea);
+                            handlePostDiscussion(discussion_id, element, commentText);
                             //appendNewCommentToPage(id, comment);
                         })
                         .catch(error => console.error('Error adding comment:', error));
@@ -188,7 +170,13 @@
         } else {
             // only add a comment to existing
             commentBox = element.querySelector('.comment-box');
-            const commentText = commentsAll && commentsAll[0] ? commentsAll[0].textContent.trim() || commentsAll[0].value.trim() : commentsAll[0];
+            let commentText;
+            if(commentsAll && commentsAll[0] && typeof commentsAll[0] === 'string') {
+                commentText = commentsAll[0];
+            } else {
+                commentText = commentsAll[0].textContent.trim() || commentsAll[0].value.trim();
+            }
+            //const commentText = commentsAll && commentsAll[0] ? commentsAll[0].textContent.trim() || commentsAll[0].value.trim() : commentsAll[0];
 
             // add to panel
             const comments_list_ul = document.querySelector(`ul[data-discussion-id="${discussion_id}"]`);
@@ -341,6 +329,11 @@
                 submitButton.style.borderRadius = '3px';
 
                 submitButton.addEventListener('click', async () => {
+                    let commentText = textarea.value.trim();
+                    if(commentText === "") {
+                        alert("Comment cannot be empty!");
+                        return;
+                    }
 
                     if(getSignedInUserEmail() == null) {
                         alert('Please sign in to post a comment');
@@ -348,10 +341,10 @@
                     }
                     const newComment = document.createElement('div');
                     newComment.className = 'comment';
-                    newComment.textContent = textarea.value.trim();
+                    newComment.textContent = commentText;
                     commentsSection.appendChild(newComment);
 
-                    handlePostDiscussion(null, element, textarea).then((discussionId) => {
+                    handlePostDiscussion(null, element, commentText).then((discussionId) => {
                         commentBox.setAttribute('data-discussion-id', discussionId);
                     });
                     textarea.value = "";
@@ -523,126 +516,15 @@
 
         if(discussion_id === null) { // new discussion
             const elSelector = buildSelector(element);
-            const firstCommentText = comment.textContent.trim() || comment.value.trim();
-            return createDiscussion('/blog', elSelector, firstCommentText)
+            //const firstCommentText = comment.textContent.trim() || comment.value.trim() || comment;
+            return createDiscussion(window.top.location.pathname, elSelector, comment)
                 .then(discussionId => {
-                    createDiscussionInPanel(discussionId, elSelector, firstCommentText);
+                    createDiscussionInPanel(discussionId, elSelector, comment);
                     return discussionId;
                 });
         } else {
             createNewCommentComponent(discussion_id, element, [comment]);
         }
-    }
-
-    // Remove
-    function appendNewCommentToPage(id, comment) {
-        const commentInput = parent.document.querySelector(`div#${id} #comment-input`);
-        const commentsSection = parent.document.querySelector(`div#${id} #comments-section`);
-
-        if (comment !== "") {
-            const newComment = document.createElement('div');
-            newComment.className = 'comment';
-            newComment.textContent = comment;
-            commentsSection.appendChild(newComment);
-            commentInput.value = "";
-
-            // Add to panel
-            const commentPanelList = document.querySelector(`ul[data-discussion-id='${id}']`);
-            const numOfComments = commentPanelList.children.length;
-            const commentElement = document.createElement('li');
-            commentElement.classList.add(`comment-${numOfComments}`);
-            commentElement.textContent = comment;
-            commentPanelList.appendChild(commentElement);
-
-        } else {
-            alert("Comment cannot be empty!");
-        }
-    }
-
-    // Remove
-    function createCommentComponent(id, targetElement, comments) {
-        // Create comment component start
-        const commentElement = document.createElement('div');
-        commentElement.id = id;
-        commentElement.className = 'comment-component';
-
-        const heading = document.createElement('h3');
-        heading.textContent = 'Discussions';
-        commentElement.appendChild(heading)
-
-        const commentBox = document.createElement('div');
-        commentBox.className = 'comment-box';
-        const commentInput = document.createElement('textarea');
-        commentInput.id = 'comment-input';
-        commentInput.placeholder = 'Write your comment here...';
-        commentBox.appendChild(commentInput);
-        const postButton = document.createElement('button');
-        postButton.textContent = 'Post Comment';
-        postButton.addEventListener('click', () => {
-            let comment = commentInput.value.trim();
-            if(comment === "") {
-                alert("Comment cannot be empty!");
-                return;
-            }
-            comment = getSignedInUserEmail() + ' - ' + comment;
-            if (comment) {
-                addCommentById(id, comment)
-                    .then(() => {
-                        appendNewCommentToPage(id, comment);
-                    })
-                    .catch(error => console.error('Error adding comment:', error));
-            }
-        });
-
-        const resolveButton = document.createElement('button');
-        resolveButton.textContent = 'Resolve discussion';
-        resolveButton.addEventListener('click', () => {
-            commentElement.style.display = 'none';
-
-            const closingText = getSignedInUserEmail() + ' - closed this discussion';
-            addCommentById(id, closingText)
-                .then(() => {
-                    resolveDiscussion(id);
-                })
-                .catch(error => console.error('Error closing discussion:', error));
-            document.querySelector(`.accordion#${id}`).remove();
-            document.querySelector(`.panel [data-discussion-id='${id}']`).parentElement.remove();
-        });
-
-        commentBox.appendChild(postButton);
-        commentBox.appendChild(resolveButton);
-        commentElement.appendChild(commentBox);
-
-        const commentsSection = document.createElement('div');
-        commentsSection.className = 'comments';
-        commentsSection.id = 'comments-section';
-        const label = document.createElement('h4');
-        label.textContent = 'Comments';
-        commentsSection.appendChild(label);
-        commentElement.appendChild(commentsSection);
-
-        // Populate comments
-        renderFetchedComments(comments, commentsSection);
-
-        // Create close button
-        const closeButton = document.createElement('button');
-        closeButton.textContent = 'X';
-        closeButton.style.position = 'absolute';
-        closeButton.style.top = '0';
-        closeButton.style.right = '0';
-        closeButton.addEventListener('click', () => {
-            commentElement.style.display = 'none';
-            const accordionTarget = document.querySelector(`.accordion#${id}`);
-            togglePanel(accordionTarget);
-            accordionTarget.classList.remove('active');
-        });
-        commentElement.appendChild(closeButton);
-
-        const blockCoordinates = targetElement.getBoundingClientRect();
-        commentElement.style.top = `${blockCoordinates.bottom + window.scrollY}px`;
-        commentElement.style.left = `${blockCoordinates.left + window.scrollX}px`;
-
-        return commentElement;
     }
 
 </script>
