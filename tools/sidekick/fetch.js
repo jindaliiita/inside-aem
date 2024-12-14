@@ -13,9 +13,11 @@ export const fetchDiscussions = async () => {
             comments(first: 1) {
               nodes {
                 body
+                createdAt
                 replies(first: 10) {
                   nodes {
                     body
+                    createdAt
                   }
                 }
               }
