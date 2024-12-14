@@ -38,56 +38,6 @@
             background-color: #f1f1f1;
         }
 
-        .comment-box {
-          margin-top: 20px;
-
-          .comment-textarea {
-            width: 100%;
-            height: 80px;
-            margin-bottom: 10px;
-
-          }
-
-          .comments {
-            margin-top: 20px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            background-color: #f9f9f9;
-
-            .comment {
-
-              margin-bottom: 10px;
-              padding: 10px;
-              border-bottom: 1px solid #ddd;
-
-              .user-box {
-
-              }
-
-              .comment-box {
-
-              }
-
-              .time-box {
-
-              }
-            }
-          }
-
-          .submit {
-
-          }
-
-          .resolve {
-
-          }
-
-          .close {
-
-          }
-        }
-
         #discussion-list {
           margin: 5px;
           padding: 5px;
@@ -102,13 +52,6 @@
           .panel {
 
             .comment-list {
-                /*
-                margin-top: 20px;
-                padding: 10px;
-                border: 1px solid #ccc;
-                border-radius: 5px;
-                background-color: #f9f9f9;
-                */
 
                 list-style-type: none; /* Remove default bullet points */
                 margin: 0;
@@ -118,13 +61,6 @@
                 border-radius: 5px; /* Rounded corners */
 
               li {
-                    /*
-                    margin-bottom: 10px;
-                    padding: 10px;
-                    border-bottom: 1px solid #ddd;
-                    list-style: none;
-                    */
-
                     margin: 10px;
                     padding: 15px;
                     background-color: #fff; /* White background for each comment */
@@ -153,32 +89,14 @@
                       font-size: 0.85rem;
                       color: #777; /* Light gray for timestamps */
                       position: absolute;
-                      bottom: 10px;
+                      bottom: 0px;
                       right: 15px;
-
                     }
                 }
             }
           }
         }
 
-        /*textarea {
-          width: 100%;
-          height: 80px;
-          margin-bottom: 10px;
-        }*/
-        /*.comments {
-          margin-top: 20px;
-          padding: 10px;
-          border: 1px solid #ccc;
-          border-radius: 5px;
-          background-color: #f9f9f9;
-        }*/
-        /*.comment {
-          margin-bottom: 10px;
-          padding: 10px;
-          border-bottom: 1px solid #ddd;
-        }*/
     </style>
     <title>Sidekick Discussion</title>
 </head>
@@ -196,28 +114,18 @@
         if (!element.querySelector('.comment-box')) {
             commentBox = document.createElement('div');
             commentBox.className = 'comment-box';
-            commentBox.style.position = 'absolute';
-            commentBox.style.top = '40px';
-            commentBox.style.right = '10px';
-            commentBox.style.background = '#f9f9f9';
-            commentBox.style.border = '1px solid #ccc';
-            commentBox.style.padding = '10px';
-            commentBox.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.2)';
             commentBox.setAttribute('data-discussion-id', discussion_id);
 
             const textarea = document.createElement('textarea');
             textarea.className = 'comment-textarea';
             textarea.placeholder = 'Add your comment...';
-            textarea.style.width = '200px';
-            textarea.style.height = '80px';
-            textarea.style.marginBottom = '5px';
 
             const commentsSection = document.createElement('div');
             commentsSection.className = 'comments';
             commentsSection.id = 'comments-section';
             renderFetchedComments(commentsAll, commentsSection);
 
-            const submitButton = createButton('Post Comment', 'submit', '#007bff', '#fff', async () => {
+            const submitButton = createButton('', 'submit', async () => {
                 let commentText = textarea.textContent.trim() || textarea.value.trim();
                 if (!commentText) {
                     alert("Comment cannot be empty!");
@@ -246,7 +154,7 @@
                 textarea.value = "";
             });
 
-            const resolveButton = createButton('Resolve discussion', 'resolve', '#007bff', '#fff', () => {
+            const resolveButton = createButton('Resolve discussion', 'resolve', () => {
 
                 handleResolveDiscussion(
                     discussion_id,
@@ -256,13 +164,7 @@
                 );
             });
 
-            const closeButton = document.createElement('button');
-            closeButton.className = 'close';
-            closeButton.textContent = 'X';
-            closeButton.style.position = 'absolute';
-            closeButton.style.top = '0';
-            closeButton.style.right = '0';
-            closeButton.addEventListener('click', () => {
+            const closeButton = createButton('X', 'close', () => {
                 commentBox.style.display = 'none';
                 commentBox.remove();
                 const accordionTarget = document.querySelector(`.accordion#${discussion_id}`);
@@ -379,25 +281,15 @@
             if (!element.querySelector('.comment-box')) {
                 const commentBox = document.createElement('div');
                 commentBox.className = 'comment-box';
-                commentBox.style.position = 'absolute';
-                commentBox.style.top = '40px';
-                commentBox.style.right = '10px';
-                commentBox.style.background = '#f9f9f9';
-                commentBox.style.border = '1px solid #ccc';
-                commentBox.style.padding = '10px';
-                commentBox.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.2)';
 
                 const textarea = document.createElement('textarea');
                 textarea.placeholder = 'Add your comment...';
-                textarea.style.width = '200px';
-                textarea.style.height = '80px';
-                textarea.style.marginBottom = '5px';
 
                 const commentsSection = document.createElement('div');
                 commentsSection.className = 'comments';
                 commentsSection.id = 'comments-section';
 
-                const submitButton = createButton('Post Comment', 'submit', '#007bff', '#fff', async () => {
+                const submitButton = createButton('', 'submit', async () => {
                     let commentText = textarea.value.trim();
                     if (!commentText) {
                         alert("Comment cannot be empty!");
@@ -437,7 +329,7 @@
                     resolveButton.style.display = 'block';
                 });
 
-                const resolveButton = createButton('Resolve discussion', 'resolve', '#007bff', '#fff', () => {
+                const resolveButton = createButton('Resolve discussion', 'resolve', () => {
                     let discussion_id = commentBox.getAttribute('data-discussion-id');
                     handleResolveDiscussion(
                         discussion_id,
@@ -447,13 +339,7 @@
                     );
                 });
 
-                const closeButton = document.createElement('button');
-                closeButton.className = 'close';
-                closeButton.textContent = 'X';
-                closeButton.style.position = 'absolute';
-                closeButton.style.top = '0';
-                closeButton.style.right = '0';
-                closeButton.addEventListener('click', () => {
+                const closeButton = createButton('X', 'close', () => {
                     commentBox.style.display = 'none';
                     commentBox.remove();
                     if(commentBox.getAttribute('data-discussion-id')) {
@@ -482,7 +368,7 @@
             element.style.transition = 'background 0.3s';
 
             element.addEventListener('mouseenter', () => {
-                element.style.background = '#f0f8ff'; // Highlight the element
+                element.style.background = '#f0f8ff';
                 // if a discussion exists with text in accordion as this buildSelector
                 const selector = buildSelector(element);
                 const accordionBtns = document.querySelectorAll('.accordion');
@@ -493,22 +379,16 @@
             });
 
             element.addEventListener('mouseleave', () => {
-                element.style.background = ''; // Remove highlight
+                element.style.background = '';
                 removeCommentIcon(element);
             });
         });
     });
 
-    function createButton(text, className, bgColor, color, onClick) {
+    function createButton(text, className, onClick) {
         const button = document.createElement('button');
         button.className = className;
         button.textContent = text;
-        button.style.background = bgColor;
-        button.style.color = color;
-        button.style.border = 'none';
-        button.style.padding = '5px 10px';
-        button.style.cursor = 'pointer';
-        button.style.borderRadius = '3px';
         button.addEventListener('click', onClick);
         return button;
     }
@@ -548,7 +428,6 @@
             newComment.appendChild(userEl);
             newComment.appendChild(commentEl);
             newComment.appendChild(timeEl);
-
         });
     }
 
@@ -588,30 +467,32 @@
         commentList.setAttribute('data-discussion-id', discussionId);
         panel.appendChild(commentList);
 
+        // sort comments by recent comment time appears first
 
-            comments.forEach((comment, index) => {
-                const commentElement = document.createElement('li');
-                commentElement.classList.add(`comment-${index}`);
+        comments.sort((a, b) => new Date(b.time) - new Date(a.time));
 
-                const userEl = document.createElement('span');
-                userEl.textContent = comment.user;
-                userEl.className = 'user';
+        comments.forEach((comment, index) => {
+            const commentElement = document.createElement('li');
+            commentElement.classList.add(`comment-${index}`);
 
-                const commentEl = document.createElement('p');
-                commentEl.textContent = comment.text;
-                commentEl.className = 'comment-text';
+            const userEl = document.createElement('span');
+            userEl.textContent = comment.user;
+            userEl.className = 'user';
 
-                const timeEl = document.createElement('p');
-                timeEl.textContent = comment.time;
-                timeEl.className = 'time';
+            const commentEl = document.createElement('p');
+            commentEl.textContent = comment.text;
+            commentEl.className = 'comment-text';
 
-                commentElement.appendChild(userEl);
-                commentElement.appendChild(commentEl);
-                commentElement.appendChild(timeEl);
+            const timeEl = document.createElement('p');
+            timeEl.textContent = comment.time;
+            timeEl.className = 'time';
 
-                commentList.appendChild(commentElement);
-            });
+            commentElement.appendChild(userEl);
+            commentElement.appendChild(commentEl);
+            commentElement.appendChild(timeEl);
 
+            commentList.appendChild(commentElement);
+        });
 
         const container = document.getElementById('discussion-list');
         container.appendChild(button);
@@ -685,15 +566,15 @@
 
         const userEl = document.createElement('span');
         userEl.textContent = commentText.user;
-        userEl.className = 'user';
+        userEl.className = 'user-box';
 
         const commentEl = document.createElement('p');
         commentEl.textContent = commentText.text;
-        commentEl.className = 'comment-text';
+        commentEl.className = 'comment-text-box';
 
         const timeEl = document.createElement('p');
         timeEl.textContent = commentText.time;
-        timeEl.className = 'time';
+        timeEl.className = 'time-box';
 
         newComment.appendChild(userEl);
         newComment.appendChild(commentEl);
