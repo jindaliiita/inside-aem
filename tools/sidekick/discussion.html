@@ -97,44 +97,36 @@
 
             const submitButton = createButton('Post Comment', '#007bff', '#fff', async () => {
                 let commentText = textarea.textContent.trim() || textarea.value.trim();
-                if(commentText === "") {
+                if (!commentText) {
                     alert("Comment cannot be empty!");
                     return;
                 }
-                if(getSignedInUserEmail() == null) {
+                const email = getSignedInUserEmail();
+                if (!email) {
                     alert('Please sign in to post a comment');
                     return;
                 }
 
-                commentText = getSignedInUserEmail() + ' - ' + commentText;
+                let finalComment = `${email} - ${commentText}`;
+                insertCommentToCommentBox(commentBox, finalComment);
 
-                const newComment = document.createElement('div');
-                newComment.className = 'comment';
-                newComment.textContent = commentText;
-                commentsSection.appendChild(newComment);
+                addCommentById(discussion_id, finalComment)
+                    .then(() => {
+                        handlePostDiscussion(discussion_id, element, finalComment);
+                    })
+                    .catch(error => console.error('Error adding comment:', error));
 
-                if (commentText) {
-                    addCommentById(discussion_id, commentText)
-                        .then(() => {
-                            handlePostDiscussion(discussion_id, element, commentText);
-                            //appendNewCommentToPage(id, comment);
-                        })
-                        .catch(error => console.error('Error adding comment:', error));
-                }
                 textarea.value = "";
             });
 
             const resolveButton = createButton('Resolve discussion', '#007bff', '#fff', () => {
-                commentBox.style.display = 'none';
-                commentBox.remove();
-                const closingText = getSignedInUserEmail() + ' - closed this discussion';
-                addCommentById(discussion_id, closingText)
-                    .then(() => {
-                        resolveDiscussion(discussion_id);
-                    })
-                    .catch(error => console.error('Error closing discussion:', error));
-                document.querySelector(`.accordion#${discussion_id}`).remove();
-                document.querySelector(`.panel [data-discussion-id='${discussion_id}']`).parentElement.remove();
+
+                handleResolveDiscussion(
+                    discussion_id,
+                    commentBox,
+                    document.querySelector(`.accordion#${discussion_id}`),
+                    document.querySelector(`.panel [data-discussion-id='${discussion_id}']`).parentElement
+                );
             });
 
             const closeButton = document.createElement('button');
@@ -165,7 +157,6 @@
             } else {
                 commentText = commentsAll[0].textContent.trim() || commentsAll[0].value.trim();
             }
-            //const commentText = commentsAll && commentsAll[0] ? commentsAll[0].textContent.trim() || commentsAll[0].value.trim() : commentsAll[0];
 
             // add to panel
             const comments_list_ul = document.querySelector(`ul[data-discussion-id="${discussion_id}"]`);
@@ -173,7 +164,7 @@
             const commentElement = document.createElement('li');
             commentElement.classList.add(`comment-${numOfComments}`);
             commentElement.textContent = commentText;
-            comments_list_ul.appendChild(commentElement);
+            comments_list_ul.insertBefore(commentElement, comments_list_ul.firstChild);
         }
         return commentBox;
     }
@@ -213,7 +204,8 @@
                     const commentElement = document.createElement('li');
                     commentElement.classList.add(`comment-${index+1}`);
                     commentElement.textContent = reply.body;
-                    commentList.appendChild(commentElement);
+                    //commentList.appendChild(commentElement);
+                    commentList.insertBefore(commentElement, commentList.firstChild);
                 });
                 container.appendChild(button);
                 container.appendChild(panel);
@@ -239,12 +231,9 @@
                 this.classList.toggle('active');
                 const discussion_id = this.id;
                 const comments_list = document.querySelectorAll(`ul[data-discussion-id="${discussion_id}"] li`);
-                //comments_list.forEach(c => console.log(c.textContent));
 
-                //const comment_component = createCommentComponent(discussion_id, targetElement, comments_list);
                 const comment_component = createNewCommentComponent(discussion_id, targetElement, comments_list);
                 comment_component.style.display = 'block';
-                //targetElement.appendChild(comment_component);
 
                 togglePanel(this);
             });
@@ -310,33 +299,32 @@
 
                 const submitButton = createButton('Post Comment', '#007bff', '#fff', async () => {
                     let commentText = textarea.value.trim();
-                    if(commentText === "") {
+                    if (!commentText) {
                         alert("Comment cannot be empty!");
                         return;
                     }
 
-                    if(getSignedInUserEmail() == null) {
+                    const email = getSignedInUserEmail();
+                    if (!email) {
                         alert('Please sign in to post a comment');
                         return;
                     }
-                    commentText = getSignedInUserEmail() + ' - ' + commentText;
-                    const newComment = document.createElement('div');
-                    newComment.className = 'comment';
-                    newComment.textContent = commentText;
-                    commentsSection.appendChild(newComment);
+
+                    const finalComment = `${email} - ${commentText}`;
+                    insertCommentToCommentBox(commentBox, finalComment);
 
                     let discussion_id = commentBox.getAttribute('data-discussion-id') || null;
 
                     if(discussion_id == null) {
-                        handlePostDiscussion(null, element, commentText).then((discussionId) => {
+                        handlePostDiscussion(null, element, finalComment).then((discussionId) => {
                             if(discussionId) { // case of new discussion
                                 commentBox.setAttribute('data-discussion-id', discussionId);
                             }
                         });
                     } else {
-                        addCommentById(discussion_id, commentText)
+                        addCommentById(discussion_id, finalComment)
                             .then(() => {
-                                handlePostDiscussion(discussion_id, element, commentText);
+                                handlePostDiscussion(discussion_id, element, finalComment);
                             })
                             .catch(error => console.error('Error adding comment:', error));
                     }
@@ -345,17 +333,13 @@
                 });
 
                 const resolveButton = createButton('Resolve discussion', '#007bff', '#fff', () => {
-                    commentBox.style.display = 'none';
-                    commentBox.remove();
-                    const closingText = getSignedInUserEmail() + ' - closed this discussion';
                     let discussion_id = commentBox.getAttribute('data-discussion-id');
-                    addCommentById(discussion_id, closingText)
-                        .then(() => {
-                            resolveDiscussion(discussion_id);
-                        })
-                        .catch(error => console.error('Error closing discussion:', error));
-                    document.querySelector(`.accordion#${discussion_id}`).remove();
-                    document.querySelector(`.panel [data-discussion-id='${discussion_id}']`).parentElement.remove();
+                    handleResolveDiscussion(
+                        discussion_id,
+                        commentBox,
+                        document.querySelector(`.accordion#${discussion_id}`),
+                        document.querySelector(`.panel [data-discussion-id='${discussion_id}']`).parentElement
+                    );
                 });
 
                 const closeButton = document.createElement('button');
@@ -442,11 +426,8 @@
     }
 
     function getSignedInUserEmail() {
-        const email = parent.document.querySelector('helix-sidekick').shadowRoot.querySelector('.profile-email');
-        if(email) {
-            return email.textContent;
-        }
-        return null;
+        const emailElement = parent.document.querySelector('helix-sidekick').shadowRoot.querySelector('.profile-email');
+        return emailElement ? emailElement.textContent : null;
     }
 
     function buildSelector(element) {
@@ -506,11 +487,13 @@
             const discussion_id = this.id;
             const comments_list = document.querySelectorAll(`ul[data-discussion-id="${discussion_id}"] li`);
 
-            const comment_component = createNewCommentComponent(discussion_id, targetElement, comments_list);
-            comment_component.style.display = 'block';
-            targetElement.appendChild(comment_component);
+            if (!targetElement.querySelector('.comment-box')) {
+                const comment_component = createNewCommentComponent(discussion_id, targetElement, comments_list);
+                comment_component.style.display = 'block';
+                targetElement.appendChild(comment_component);
+                togglePanel(this);
+            }
 
-            togglePanel(this);
         });
     }
 
@@ -518,7 +501,6 @@
 
         if(discussion_id === null) { // new discussion
             const elSelector = buildSelector(element);
-            //const firstCommentText = comment.textContent.trim() || comment.value.trim() || comment;
             return createDiscussion(window.top.location.pathname, elSelector, comment)
                 .then(discussionId => {
                     createDiscussionInPanel(discussionId, elSelector, comment);
@@ -529,6 +511,34 @@
         }
     }
 
+    function handleResolveDiscussion(discussionId, commentBox, button, panel) {
+
+        commentBox.style.display = 'none';
+        commentBox.remove();
+
+        const email = getSignedInUserEmail();
+        if (!email) {
+            alert('Please sign in to resolve the discussion');
+            return;
+        }
+
+        const closingText = `${email} - closed this discussion`;
+        addCommentById(discussionId, closingText)
+            .then(() => {
+                resolveDiscussion(discussionId);
+                button.remove();
+                panel.remove();
+            })
+            .catch(error => console.error('Error resolving discussion:', error));
+    }
+
+    function insertCommentToCommentBox(commentBox, commentText) {
+        const commentsSection = commentBox.querySelector('.comments');
+        const newComment = document.createElement('div');
+        newComment.className = 'comment';
+        newComment.textContent = commentText;
+        commentsSection.insertBefore(newComment, commentsSection.firstChild);
+    }
 </script>
 
 </body>
