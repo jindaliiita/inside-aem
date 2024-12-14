@@ -40,24 +40,145 @@
 
         .comment-box {
           margin-top: 20px;
+
+          .comment-textarea {
+            width: 100%;
+            height: 80px;
+            margin-bottom: 10px;
+
+          }
+
+          .comments {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+
+            .comment {
+
+              margin-bottom: 10px;
+              padding: 10px;
+              border-bottom: 1px solid #ddd;
+
+              .user-box {
+
+              }
+
+              .comment-box {
+
+              }
+
+              .time-box {
+
+              }
+            }
+          }
+
+          .submit {
+
+          }
+
+          .resolve {
+
+          }
+
+          .close {
+
+          }
         }
-        textarea {
+
+        #discussion-list {
+          margin: 5px;
+          padding: 5px;
+          border: 1px solid #ccc;
+          border-radius: 5px;
+          background-color: #f9f9f9;
+
+          .accordion {
+
+          }
+
+          .panel {
+
+            .comment-list {
+                /*
+                margin-top: 20px;
+                padding: 10px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                background-color: #f9f9f9;
+                */
+
+                list-style-type: none; /* Remove default bullet points */
+                margin: 0;
+                padding: 0;
+                background-color: #f9f9f9; /* Light background for contrast */
+                border: 1px solid #ddd; /* Subtle border around the list */
+                border-radius: 5px; /* Rounded corners */
+
+              li {
+                    /*
+                    margin-bottom: 10px;
+                    padding: 10px;
+                    border-bottom: 1px solid #ddd;
+                    list-style: none;
+                    */
+
+                    margin: 10px;
+                    padding: 15px;
+                    background-color: #fff; /* White background for each comment */
+                    border: 1px solid #ddd; /* Border for individual comments */
+                    border-radius: 5px; /* Rounded corners */
+                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+                    position: relative;
+
+                    .user {
+                      font-weight: bold;
+                      font-size: 1.1rem;
+                      color: #007bff; /* Blue for usernames */
+                      margin-bottom: 5px;
+
+                    }
+
+                    .comment-text {
+                      font-size: 1rem;
+                      color: #333; /* Darker text for readability */
+                      line-height: 1.5;
+                      margin-bottom: 10px;
+
+                    }
+
+                    .time {
+                      font-size: 0.85rem;
+                      color: #777; /* Light gray for timestamps */
+                      position: absolute;
+                      bottom: 10px;
+                      right: 15px;
+
+                    }
+                }
+            }
+          }
+        }
+
+        /*textarea {
           width: 100%;
           height: 80px;
           margin-bottom: 10px;
-        }
-        .comments {
+        }*/
+        /*.comments {
           margin-top: 20px;
           padding: 10px;
           border: 1px solid #ccc;
           border-radius: 5px;
           background-color: #f9f9f9;
-        }
-        .comment {
+        }*/
+        /*.comment {
           margin-bottom: 10px;
           padding: 10px;
           border-bottom: 1px solid #ddd;
-        }
+        }*/
     </style>
     <title>Sidekick Discussion</title>
 </head>
@@ -136,6 +257,7 @@
             });
 
             const closeButton = document.createElement('button');
+            closeButton.className = 'close';
             closeButton.textContent = 'X';
             closeButton.style.position = 'absolute';
             closeButton.style.top = '0';
@@ -200,7 +322,7 @@
         document.body.appendChild(container);
         discussions.forEach(discussion => {
 
-            // flatten all comments and rpelies
+            // flatten all comments and replies
             let comments = [];
             discussion.comments.nodes.forEach(comment => {
                 comments.push({
@@ -223,7 +345,6 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         const addCommentIcon = (element) => {
-            // Create the + icon if it does not exist
             if (!element.querySelector('.comment-icon')) {
                 const icon = document.createElement('div');
                 icon.textContent = '+';
@@ -246,7 +367,6 @@
             }
         };
 
-        // Function to remove the + icon when not hovering
         const removeCommentIcon = (element) => {
             const icon = element.querySelector('.comment-icon');
             if (icon) {
@@ -254,7 +374,6 @@
             }
         };
 
-        // Function to open a comment box
         const openCommentBox = async (element) => {
             // Create the comment box if it does not exist
             if (!element.querySelector('.comment-box')) {
@@ -329,6 +448,7 @@
                 });
 
                 const closeButton = document.createElement('button');
+                closeButton.className = 'close';
                 closeButton.textContent = 'X';
                 closeButton.style.position = 'absolute';
                 closeButton.style.top = '0';
@@ -452,55 +572,6 @@
             element = element.parentElement;
         }
         return parts.join(' > ');
-    }
-
-    function createDiscussionInPanel(discussionId, selector, commentText) {
-
-        const button = document.createElement('button');
-        button.className = 'accordion';
-        button.textContent = selector;
-        button.id = discussionId;
-
-        const panel = document.createElement('div');
-        panel.className = 'panel';
-        const commentList = document.createElement('ul');
-        commentList.className = 'comment-list';
-        commentList.setAttribute('data-discussion-id', discussionId);
-        panel.appendChild(commentList);
-
-        const commentElement = document.createElement('li');
-        commentElement.classList.add(`comment-0`);
-        commentElement.textContent = commentText;
-        commentList.appendChild(commentElement);
-
-        const container = document.getElementById('discussion-list');
-        container.appendChild(button);
-        container.appendChild(panel);
-
-        button.addEventListener('click', function() {
-            var buttonValue = this.textContent;
-
-            var targetElement = parent.document.querySelector(buttonValue);
-            if (targetElement) {
-                console.log('found target element' + targetElement);
-                targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-
-            if (this.classList.contains('active')) {
-                togglePanel(this);
-                return;
-            }
-            this.classList.toggle('active');
-            const discussion_id = this.id;
-            const comments_list = document.querySelectorAll(`ul[data-discussion-id="${discussion_id}"] li`);
-
-            if (!targetElement.querySelector('.comment-box')) {
-                const comment_component = createNewCommentComponent(discussion_id, targetElement, comments_list);
-                comment_component.style.display = 'block';
-                targetElement.appendChild(comment_component);
-                togglePanel(this);
-            }
-        });
     }
 
     function addDiscussionToPanel(discussionId, selector, comments) {
@@ -633,4 +704,5 @@
 </script>
 
 </body>
+
 </html>
