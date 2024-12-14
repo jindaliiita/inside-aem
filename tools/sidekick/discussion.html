@@ -95,16 +95,7 @@
             commentsSection.id = 'comments-section';
             renderFetchedComments(commentsAll, commentsSection);
 
-            const submitButton = document.createElement('button');
-            submitButton.textContent = 'Post Comment';
-            submitButton.style.background = '#007bff';
-            submitButton.style.color = '#fff';
-            submitButton.style.border = 'none';
-            submitButton.style.padding = '5px 10px';
-            submitButton.style.cursor = 'pointer';
-            submitButton.style.borderRadius = '3px';
-
-            submitButton.addEventListener('click', async () => {
+            const submitButton = createButton('Post Comment', '#007bff', '#fff', async () => {
                 let commentText = textarea.textContent.trim() || textarea.value.trim();
                 if(commentText === "") {
                     alert("Comment cannot be empty!");
@@ -133,9 +124,7 @@
                 textarea.value = "";
             });
 
-            const resolveButton = document.createElement('button');
-            resolveButton.textContent = 'Resolve discussion';
-            resolveButton.addEventListener('click', () => {
+            const resolveButton = createButton('Resolve discussion', '#007bff', '#fff', () => {
                 commentBox.style.display = 'none';
                 commentBox.remove();
                 const closingText = getSignedInUserEmail() + ' - closed this discussion';
@@ -190,18 +179,18 @@
     }
 
     document.addEventListener('DOMContentLoaded', async function() {
-        let dicussions;
+        let discussions;
         try {
             let data = await fetchDiscussions();
-            dicussions = data.repository.discussions.nodes;
-            console.log('Fetched discussions:', dicussions);
+            discussions = data.repository.discussions.nodes;
+            console.log('Fetched discussions:', discussions);
         } catch (error) {
             console.error('Error fetching discussions:', error);
         }
 
         const container = document.createElement('div');
         container.id = "discussion-list";
-        dicussions.forEach(discussion => {
+        discussions.forEach(discussion => {
             const button = document.createElement('button');
             button.className = 'accordion';
             button.textContent = discussion.body;
@@ -319,16 +308,7 @@
                 commentsSection.className = 'comments';
                 commentsSection.id = 'comments-section';
 
-                const submitButton = document.createElement('button');
-                submitButton.textContent = 'Post Comment';
-                submitButton.style.background = '#007bff';
-                submitButton.style.color = '#fff';
-                submitButton.style.border = 'none';
-                submitButton.style.padding = '5px 10px';
-                submitButton.style.cursor = 'pointer';
-                submitButton.style.borderRadius = '3px';
-
-                submitButton.addEventListener('click', async () => {
+                const submitButton = createButton('Post Comment', '#007bff', '#fff', async () => {
                     let commentText = textarea.value.trim();
                     if(commentText === "") {
                         alert("Comment cannot be empty!");
@@ -339,6 +319,7 @@
                         alert('Please sign in to post a comment');
                         return;
                     }
+                    commentText = getSignedInUserEmail() + ' - ' + commentText;
                     const newComment = document.createElement('div');
                     newComment.className = 'comment';
                     newComment.textContent = commentText;
@@ -363,10 +344,7 @@
                     resolveButton.style.display = 'block';
                 });
 
-                const resolveButton = document.createElement('button');
-                resolveButton.textContent = 'Resolve discussion';
-                resolveButton.style.display = 'none';
-                resolveButton.addEventListener('click', () => {
+                const resolveButton = createButton('Resolve discussion', '#007bff', '#fff', () => {
                     commentBox.style.display = 'none';
                     commentBox.remove();
                     const closingText = getSignedInUserEmail() + ' - closed this discussion';
@@ -430,6 +408,19 @@
             });
         });
     });
+
+    function createButton(text, bgColor, color, onClick) {
+        const button = document.createElement('button');
+        button.textContent = text;
+        button.style.background = bgColor;
+        button.style.color = color;
+        button.style.border = 'none';
+        button.style.padding = '5px 10px';
+        button.style.cursor = 'pointer';
+        button.style.borderRadius = '3px';
+        button.addEventListener('click', onClick);
+        return button;
+    }
 
     function togglePanel(elem) {
         var panel = elem.nextElementSibling;
