@@ -1,4 +1,4 @@
-const GITHUB_TOKEN = '';
+const GITHUB_TOKEN = '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';
 export const REPO_OWNER = 'akasjain-helix';
 export const REPO_NAME = 'hlxdiscussions';
 
