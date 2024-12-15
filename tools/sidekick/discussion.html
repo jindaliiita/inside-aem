@@ -152,6 +152,9 @@
                     .catch(error => console.error('Error adding comment:', error));
 
                 textarea.value = "";
+                if(commentsSection.children.length == 0) {
+                    resolveButton.style.display = 'block';
+                }
             });
 
             const resolveButton = createButton('Resolve discussion', 'resolve', () => {
@@ -175,6 +178,9 @@
             commentBox.appendChild(textarea);
             commentBox.appendChild(commentsSection);
             commentBox.appendChild(submitButton);
+            if(commentsSection.children.length == 0) {
+                resolveButton.style.display = 'none';
+            }
             commentBox.appendChild(resolveButton);
             commentBox.appendChild(closeButton);
             element.appendChild(commentBox);
@@ -214,6 +220,7 @@
         try {
             let data = await fetchDiscussions();
             discussions = data.repository.discussions.nodes;
+            discussions = discussions.filter(discussion => discussion.title===window.top.location.pathname);
             console.log('Fetched discussions:', discussions);
         } catch (error) {
             console.error('Error fetching discussions:', error);
@@ -283,6 +290,7 @@
                 commentBox.className = 'comment-box';
 
                 const textarea = document.createElement('textarea');
+                textarea.className = 'comment-textarea';
                 textarea.placeholder = 'Add your comment...';
 
                 const commentsSection = document.createElement('div');
@@ -327,6 +335,9 @@
                     }
                     textarea.value = "";
                     resolveButton.style.display = 'block';
+                    if(commentsSection.children.length == 0) {
+                        resolveButton.style.display = 'none';
+                    }
                 });
 
                 const resolveButton = createButton('Resolve discussion', 'resolve', () => {
@@ -353,6 +364,9 @@
                 commentBox.appendChild(textarea);
                 commentBox.appendChild(commentsSection);
                 commentBox.appendChild(submitButton);
+                if (commentsSection.children.length == 0) {
+                    resolveButton.style.display = 'none';
+                }
                 commentBox.appendChild(resolveButton);
                 commentBox.appendChild(closeButton);
                 element.appendChild(commentBox);
