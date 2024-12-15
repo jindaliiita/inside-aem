@@ -1,4 +1,4 @@
-const GITHUB_TOKEN = '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';
+const XYZ = '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';
 export const REPO_OWNER = 'akasjain-helix';
 export const REPO_NAME = 'hlxdiscussions';
 
@@ -8,7 +8,7 @@ export async function sendGraphQLRequest(query, variables = {}) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${GITHUB_TOKEN}`,
+            Authorization: `Bearer ${XYZ}`,
         },
         body: JSON.stringify({ query, variables }),
     });
