@@ -1,7 +1,7 @@
 /* eslint-disable no-shadow */
 /* eslint-disable no-use-before-define */
-const apiUrl = 'http://localhost:3001/requests/search'; // Replace with your API endpoint
-const filterUrl = 'http://localhost:3001/requests/states';
+const apiUrl = 'http://localhost:4500/requests/search'; // Replace with your API endpoint
+const filterUrl = 'http://localhost:4500/requests/states';
 
 // Fetch and populate table data
 // eslint-disable-next-line no-shadow
@@ -285,7 +285,7 @@ function getPostData(requestId, action) {
 
 // Handle approval/rejection actions
 function handleApproval(requestId, action) {
-  const submitUrl = 'http://localhost:3001/requests/submit';
+  const submitUrl = 'http://localhost:4500/requests/submit';
   const data = getPostData(requestId, action);
   const options = {
     method: 'POST',
