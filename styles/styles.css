@@ -658,6 +658,12 @@ main .section.carousel-container {
   left: auto;
   right: 0;
 
+  display: flex;
+  max-height: 500px;
+  position: absolute;
+  flex-direction: column;
+  overflow-y: auto;
+
 
   .comment-textarea {
     /*
